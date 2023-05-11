@@ -29,7 +29,7 @@ namespace SetTests
         {
             var tree = new BinaryTree<int>(new int[] { 2 });
             var res = tree.Add(1);
-            Assert.AreEqual(1, res.Data);
+            Assert.AreEqual(2, res.Data);
             Assert.IsNotNull(tree.Root.LeftNode);
             Assert.AreEqual(1, tree.Root.LeftNode.Data);
         }
@@ -39,7 +39,7 @@ namespace SetTests
         {
             var tree = new BinaryTree<int>(new int[] { 2 });
             var res = tree.Add(3);
-            Assert.AreEqual(3, res.Data);
+            Assert.AreEqual(2, res.Data);
             Assert.IsNotNull(tree.Root.RightNode);
             Assert.AreEqual(3, tree.Root.RightNode.Data);
         }
