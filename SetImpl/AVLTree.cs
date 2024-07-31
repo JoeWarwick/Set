@@ -2,7 +2,7 @@ using System.Text;
 
 namespace SetImpl
 {
-    public class AVLTree<T> where T : IComparable
+    public class AVLTree<T> : IAVLTree<T> where T : IComparable
     {
         public AVLTreeNode<T>? root;
 
@@ -71,7 +71,7 @@ namespace SetImpl
 
         private static AVLTreeNode<T>? Find(AVLTreeNode<T>? node, T Value)
         {
-            if (node == null) 
+            if (node == null)
                 return node;
             int compareResult = Value.CompareTo(node.Value);
             if (compareResult < 0)
