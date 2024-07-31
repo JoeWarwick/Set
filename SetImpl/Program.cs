@@ -2,9 +2,18 @@
 {
     internal class Program
     {
-        static void Main(string[] args)
+        static void Main()
         {
-            Console.WriteLine("Hello, World!");
+            AVLTree<int> tree = new AVLTree<int>();
+
+            tree.Insert(10);
+            tree.Insert(20);
+            tree.Insert(30);
+            tree.Insert(40);
+            tree.Insert(50);
+            tree.Insert(25);
+
+            tree.PrintTree();
         }
     }
 }
