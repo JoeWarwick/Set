@@ -3,7 +3,7 @@ namespace SetTests
     using SetImpl;
 
     [TestClass]
-    public class TestBinaryTree
+    public class TestAVLTree
     {
         [TestMethod]
         public void TestEmptyTree() 
