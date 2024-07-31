@@ -9,9 +9,8 @@ namespace SetImpl
         public AVLTree(T[] items)
         {
             foreach (var item in items)
-            {
                 root = Insert(item);
-            }
+
         }
 
         public AVLTree()
@@ -221,7 +220,7 @@ namespace SetImpl
             return y;
         }
 
-        public string PrintTree()
+        public override string ToString()
         {
             if (root == null) return "EMPTY";
             StringBuilder sb = new();
@@ -244,7 +243,7 @@ namespace SetImpl
                     sb.Append("L----");
                     indent += "|  ";
                 }
-                sb.Append(node.Value);
+                sb.AppendLine(node.Value.ToString());
 
                 AVLTree<T>.PrintTree(node.Left, indent, false, sb);
                 AVLTree<T>.PrintTree(node.Right, indent, true, sb);

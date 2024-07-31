@@ -13,7 +13,7 @@
             tree.Insert(50);
             tree.Insert(25);
 
-            tree.PrintTree();
+            Console.Write(tree.ToString());
         }
     }
 }
