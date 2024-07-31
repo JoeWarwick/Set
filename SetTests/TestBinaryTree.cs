@@ -56,19 +56,47 @@ namespace SetTests
             Assert.IsNotNull(root.Left);
         }
 
+        [TestMethod] public void TestDelete()
+        {
+            int[] test = { 1, 5, 6, 7, 3 };
+            var tree = new AVLTree<int>(test);
+            tree.Delete(5);
+            string res1 = tree.PrintTree();
+            Assert.AreEqual(res1, "R----6   L----1   |  R----3   R----7");
+        }
+
+        [TestMethod]
+        public void TestFindMissing()
+        {
+            int[] test = { 5, 11, 16, 15, 4, 6, 13, 10, 16 };
+            AVLTree<int> tree = new AVLTree<int>(test);
+            AVLTreeNode<int>? res = tree.Find(7);
+            Assert.IsNull(res);
+        }
+
+        [TestMethod]
+        public void TestFind()
+        {
+            int[] test = { 5, 11, 16, 15, 4, 6, 13, 10, 16 };
+            AVLTree<int> tree = new AVLTree<int>(test);
+            AVLTreeNode<int>? res = tree.Find(10);
+            Assert.IsNotNull(res);
+            Assert.AreEqual(10, res.Value);
+        }
+
         [TestMethod]
         public void TestTreeBalance()
         {
             int[] test = { 5, 11, 16, 15, 4, 6, 13, 10, 16 };
             AVLTree<int> tree = new AVLTree<int>(test);
             string res1 = tree.PrintTree();
-            Assert.AreEqual(res1, "R----11   L----5   |  L----4   |  R----6   |     R----10   R----15      L----13      R----16");
+            Assert.AreEqual(res1, "R----11   L----6   |  L----5   |  |  L----4   |  R----10   R----15      L----13      R----16");
             tree.Insert(14);
             string res2 = tree.PrintTree();
-            Assert.AreEqual(res2, "R----11   L----5   |  L----4   |  R----6   |     R----10   R----15      L----13      |  R----14      R----16");
+            Assert.AreEqual(res2, "R----11   L----6   |  L----5   |  |  L----4   |  R----10   R----15      L----13      |  R----14      R----16");
             tree.Insert(3);
             string res3 = tree.PrintTree();
-            Assert.AreEqual(res3, "R----11   L----5   |  L----4   |  |  L----3   |  R----6   |     R----10   R----15      L----13      |  R----14      R----16");
+            Assert.AreEqual(res3, "R----4   L----3   R----11      L----6      |  L----5      |  R----10      R----15         L----13         |  R----14         R----16");
         }
     }
 }
