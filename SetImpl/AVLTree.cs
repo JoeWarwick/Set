@@ -1,25 +1,28 @@
+using System.Drawing;
 using System.Text;
 
 namespace SetImpl
 {
-    public class AVLTree<T> : IAVLTree<T> where T : IComparable
+    public class AVLTree<T> : IAVLTree<T> where T : IComparable<T>
     {
         public AVLTreeNode<T>? root;
+        private readonly object lockObject = new();
 
         public AVLTree(T[] items)
         {
             foreach (var item in items)
-                root = Insert(item);
-
+                Insert(item);
         }
 
         public AVLTree()
         { }
 
-        public AVLTreeNode<T>? Insert(T value)
+        public void Insert(T value)
         {
-            root = AVLTree<T>.Insert(root, value);
-            return root;
+            lock (lockObject)
+            {
+                root = Insert(root, value);
+            }
         }
 
         private static AVLTreeNode<T>? Insert(AVLTreeNode<T>? node, T value)
@@ -29,36 +32,38 @@ namespace SetImpl
 
             int compareResult = value.CompareTo(node.Value);
             if (compareResult < 0)
-                node.Left = AVLTree<T>.Insert(node.Left, value);
+                node.Left = Insert(node.Left, value);
             else if (compareResult > 0)
-                node.Right = AVLTree<T>.Insert(node.Right, value);
+                node.Right = Insert(node.Right, value);
             else
-                return node;
+                return node; // same value!
 
-            node.Height = 1 + Math.Max(AVLTree<T>.Height(node.Left), AVLTree<T>.Height(node.Right));
+            node.Height = 1 + Math.Max(Height(node.Left), Height(node.Right));
 
-            int balance = AVLTree<T>.GetBalance(node);
+            int balance = GetBalance(node);
 
+            var lv = node.Left != null ? node.Left.Value : default(T);
+            var rv = node.Right != null ? node.Right.Value : default(T);
             // Left heavy situation
-            if (balance > 1 && node.Left != null && value.CompareTo(node.Left.Value) < 0)
-                return AVLTree<T>.RotateRight(node);
+            if (balance > 1 && value.CompareTo(lv) < 0)
+                return RotateRight(node);
 
             // Right heavy situation
-            if (balance < -1 && node.Right != null && value.CompareTo(node.Right.Value) > 0)
-                return AVLTree<T>.RotateLeft(node);
+            if (balance < -1 && value.CompareTo(rv) > 0)
+                return RotateLeft(node);
 
             // Left-Right situation
-            if (balance > 1 && node.Left != null && value.CompareTo(node.Left.Value) > 0)
+            if (balance > 1 && value.CompareTo(lv) > 0)
             {
-                node.Left = AVLTree<T>.RotateLeft(node.Left);
-                return AVLTree<T>.RotateRight(node);
+                node.Left = RotateLeft(node.Left);
+                return RotateRight(node);
             }
 
             // Right-Left situation
-            if (balance < -1 && node.Right != null && value.CompareTo(node.Right.Value) < 0)
+            if (balance < -1 && value.CompareTo(rv) < 0)
             {
-                node.Right = AVLTree<T>.RotateRight(node.Right);
-                return AVLTree<T>.RotateLeft(node);
+                node.Right = RotateRight(node.Right);
+                return RotateLeft(node);
             }
 
             return node;
@@ -75,9 +80,9 @@ namespace SetImpl
                 return node;
             int compareResult = Value.CompareTo(node.Value);
             if (compareResult < 0)
-                return AVLTree<T>.Find(node.Left, Value);
+                return Find(node.Left, Value);
             else if (compareResult > 0)
-                return AVLTree<T>.Find(node.Right, Value);
+                return Find(node.Right, Value);
             else return node;
         }
 
@@ -93,9 +98,9 @@ namespace SetImpl
 
             int compareResult = value.CompareTo(node.Value);
             if (compareResult < 0)
-                node.Left = AVLTree<T>.Delete(node.Left, value);
+                node.Left = Delete(node.Left, value);
             else if (compareResult > 0)
-                node.Right = AVLTree<T>.Delete(node.Right, value);
+                node.Right = Delete(node.Right, value);
             else
             {
                 // Node with only one child or no child
@@ -117,44 +122,55 @@ namespace SetImpl
                 else
                 {
                     // Node with two children
-                    AVLTreeNode<T> temp = AVLTree<T>.MinValueNode(node.Right);
+                    AVLTreeNode<T> temp = MinValueNode(node.Right);
 
                     node.Value = temp.Value;
 
-                    node.Right = AVLTree<T>.Delete(node.Right, temp.Value);
+                    node.Right = Delete(node.Right, temp.Value);
                 }
             }
 
             if (node == null)
                 return node;
 
-            node.Height = Math.Max(AVLTree<T>.Height(node.Left), AVLTree<T>.Height(node.Right)) + 1;
+            node.Height = Math.Max(Height(node.Left), Height(node.Right)) + 1;
 
-            int balance = AVLTree<T>.GetBalance(node);
+            int balance = GetBalance(node);
 
             // Left heavy situation
-            if (balance > 1 && AVLTree<T>.GetBalance(node.Left) >= 0)
-                return AVLTree<T>.RotateRight(node);
+            if (balance > 1 && GetBalance(node.Left) >= 0)
+                return RotateRight(node);
 
             // Left-Right situation
-            if (balance > 1 && AVLTree<T>.GetBalance(node.Left) < 0)
+            if (balance > 1 && GetBalance(node.Left) < 0)
             {
-                node.Left = AVLTree<T>.RotateLeft(node.Left);
-                return AVLTree<T>.RotateRight(node);
+                node.Left = RotateLeft(node.Left);
+                return RotateRight(node);
             }
 
             // Right heavy situation
-            if (balance < -1 && AVLTree<T>.GetBalance(node.Right) <= 0)
-                return AVLTree<T>.RotateLeft(node);
+            if (balance < -1 && GetBalance(node.Right) <= 0)
+                return RotateLeft(node);
 
             // Right-Left situation
-            if (balance < -1 && AVLTree<T>.GetBalance(node.Right) > 0)
+            if (balance < -1 && GetBalance(node.Right) > 0)
             {
-                node.Right = AVLTree<T>.RotateRight(node.Right);
-                return AVLTree<T>.RotateLeft(node);
+                node.Right = RotateRight(node.Right);
+                return RotateLeft(node);
             }
 
             return node;
+        }
+
+        public int Size()
+        {
+            return Size(root);
+        }
+
+        private static int Size(AVLTreeNode<T>? node)
+        {
+            if(node == null) return 0;
+            return 1 + Size(node.Left) + Size(node.Right);
         }
 
         private static AVLTreeNode<T> MinValueNode(AVLTreeNode<T> node)
@@ -174,7 +190,7 @@ namespace SetImpl
 
         private static int GetBalance(AVLTreeNode<T>? node)
         {
-            return node == null ? 0 : AVLTree<T>.Height(node.Left) - AVLTree<T>.Height(node.Right);
+            return node == null ? 0 : Height(node.Left) - Height(node.Right);
         }
 
         private static AVLTreeNode<T>? RotateRight(AVLTreeNode<T>? y)
@@ -183,17 +199,11 @@ namespace SetImpl
             AVLTreeNode<T>? T2 = x?.Right;
 
             // Perform rotation
-            if (x != null)
-            {
-                x.Right = y;
-                x.Height = Math.Max(AVLTree<T>.Height(x.Left), AVLTree<T>.Height(x.Right)) + 1;
-            }
+            if(x!=null) x.Right = y;
+            if(y!=null) y.Left = T2;
 
-            if (y != null)
-            {
-                y.Left = T2;
-                y.Height = Math.Max(AVLTree<T>.Height(y.Left), AVLTree<T>.Height(y.Right)) + 1;
-            }
+            if(y!=null) y.Height = Math.Max(Height(y.Left), Height(y.Right)) + 1;
+            if(x!=null) x.Height = Math.Max(Height(x.Left), Height(x.Right)) + 1;
 
             // Return new root
             return x;
@@ -205,16 +215,11 @@ namespace SetImpl
             AVLTreeNode<T>? T2 = y?.Left;
 
             // Perform rotation
-            if (y != null)
-            {
-                y.Left = x;
-                y.Height = Math.Max(AVLTree<T>.Height(y.Left), AVLTree<T>.Height(y.Right)) + 1;
-            }
-            if (x != null)
-            {
-                x.Right = T2;
-                x.Height = Math.Max(AVLTree<T>.Height(x.Left), AVLTree<T>.Height(x.Right)) + 1;
-            }
+            if(y!=null) y.Left = x;
+            if(x!=null) x.Right = T2;
+
+            if(x!=null) x.Height = Math.Max(Height(x.Left), Height(x.Right)) + 1;
+            if(y!=null) y.Height = Math.Max(Height(y.Left), Height(y.Right)) + 1;
 
             // Return new root
             return y;
@@ -245,8 +250,8 @@ namespace SetImpl
                 }
                 sb.AppendLine(node.Value.ToString());
 
-                AVLTree<T>.PrintTree(node.Left, indent, false, sb);
-                AVLTree<T>.PrintTree(node.Right, indent, true, sb);
+                PrintTree(node.Left, indent, false, sb);
+                PrintTree(node.Right, indent, true, sb);
             }
         }
     }
