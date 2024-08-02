@@ -69,9 +69,10 @@ namespace SetImpl
             return node;
         }
 
-        public AVLTreeNode<T>? Find(T value)
+        public T? Find(T value)
         {
-            return AVLTree<T>.Find(root, value);
+            var result = AVLTree<T>.Find(root, value);
+            return result == null ? default : result.Value;  
         }
 
         private static AVLTreeNode<T>? Find(AVLTreeNode<T>? node, T Value)

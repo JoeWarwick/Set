@@ -1,7 +1,6 @@
 namespace SetTests
 {
     using System;
-    using System.Collections.Concurrent;
     using SetImpl;
 
     [TestClass]
@@ -75,45 +74,43 @@ namespace SetTests
         {
             int[] test = { 5, 11, 16, 15, 4, 6, 13, 10, 16 };
             AVLTree<int> tree = new(test);
-            AVLTreeNode<int>? res = tree.Find(7);
-            Assert.IsNull(res);
+            int res = tree.Find(7);
+            Assert.AreEqual(default, res);
         }
 
         [TestMethod]
         public void TestFind()
         {
-            int[] test = { 5, 11, 16, 15, 4, 6, 13, 10, 16 };
+            int[] test = { 5, 11, 16, 15, 4, 6, 13, 10, 17 };
             AVLTree<int> tree = new(test);
-            AVLTreeNode<int>? res = tree.Find(10);
-            Assert.IsNotNull(res);
-            Assert.AreEqual(10, res.Value);
+            int? res = tree.Find(10);
+            Assert.AreNotEqual(default, res);
+            Assert.AreEqual(10, res);
         }
-
+        
+        // Following rotation tests from https://www.geeksforgeeks.org/insertion-in-an-avl-tree/
         [TestMethod]
-        public void TestTreeBalance1()
+        public void TestRightRotate()
         {
-            int[] test = { 5, 11, 16, 15, 4, 6, 13, 10, 16 };
+            int[] test = { 13, 15, 10, 16, 5, 11, 4, 6 };
             AVLTree<int> tree = new(test);
             string res1 = tree.ToString();
-            Assert.AreEqual("R----11\r\n   L----6\r\n   |  L----5\r\n   |  |  L----4\r\n   |  R----10\r\n   R----15\r\n      L----13\r\n      R----16\r\n", res1);
-            tree.Insert(14);
+            Assert.AreEqual("R----13\r\n   L----10\r\n   |  L----5\r\n   |  |  L----4\r\n   |  |  R----6\r\n   |  R----11\r\n   R----15\r\n      R----16\r\n", res1);
+            tree.Insert(7);
             string res2 = tree.ToString();
-            Assert.AreEqual("R----11\r\n   L----6\r\n   |  L----5\r\n   |  |  L----4\r\n   |  R----10\r\n   R----15\r\n      L----13\r\n      |  R----14\r\n      R----16\r\n", res2);
-            tree.Insert(3); // heavy to the right??
-            string res3 = tree.ToString();
-            Assert.AreEqual("R----4\r\n   L----3\r\n   R----11\r\n      L----6\r\n      |  L----5\r\n      |  R----10\r\n      R----15\r\n         L----13\r\n         |  R----14\r\n         R----16\r\n", res3);
+            Assert.AreEqual("R----13\r\n   L----6\r\n   |  L----5\r\n   |  |  L----4\r\n   |  R----10\r\n   |     L----7\r\n   |     R----11\r\n   R----15\r\n      R----16\r\n", res2);
         }
 
         [TestMethod]
-        public void TestTreeBalance2()
+        public void TestLeftRotate()
         {
             int[] test = { 5, 30, 32, 35, 40 };
             AVLTree<int> tree = new(test);
             string res1 = tree.ToString();
-            Assert.AreEqual("R----35\r\n   L----30\r\n   |  L----5\r\n   |  R----32\r\n   R----40\r\n", res1);
-            tree.Insert(31);
+            Assert.AreEqual("R----30\r\n   L----5\r\n   R----35\r\n      L----32\r\n      R----40\r\n", res1);
+            tree.Insert(45);
             string res2 = tree.ToString();
-            Assert.AreEqual("R----32\r\n   L----30\r\n   |  L----5\r\n   |  R----31\r\n   R----35\r\n      R----40\r\n", res2);
+            Assert.AreEqual("R----35\r\n   L----30\r\n   |  L----5\r\n   |  R----32\r\n   R----40\r\n      R----45\r\n", res2);
         }
 
         [TestMethod]
@@ -121,7 +118,7 @@ namespace SetTests
         {
             var tree = new AVLTree<Employee>();
             var rnd = new Random(DateTime.UtcNow.Millisecond);
-            var count = 10_000;
+            var count = 1_000_000;
             Parallel.For(0, count, i=>
             {             
                 var emp = new Employee() { Id = i + 1, Salary = (decimal?)(rnd.Next() * 0.01), Name = GenerateName(3 + i % 10, rnd) };
