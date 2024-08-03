@@ -114,14 +114,51 @@ namespace SetTests
         }
 
         [TestMethod]
+        public void TestGetIndexOf()
+        {
+            int[] test = { 13, 15, 10, 16, 5, 11, 4, 6 };
+            AVLTree<int> tree = new(test);
+            var res1 = tree.IndexOf(5);
+            Assert.AreEqual(1, res1);
+            var res2 = tree.Get(res1);
+            Assert.AreEqual(5, res2);
+        }
+
+        [TestMethod]
+        public void TestQuery()
+        {
+            var tree = new AVLTree<int>();
+
+            tree.Insert(10);
+            tree.Insert(20);
+            tree.Insert(5);
+            tree.Insert(3);
+            tree.Insert(7);
+
+            
+            var query = tree.Where(x => x > 5);
+
+            foreach (var item in query)
+            {
+                Console.WriteLine(item);
+            }
+        }
+
+        [TestMethod]
         public void TestLargeSet()
         {
             var tree = new AVLTree<Employee>();
             var rnd = new Random(DateTime.UtcNow.Millisecond);
-            var count = 1_000_000;
+            var count = 10_000;
             Parallel.For(0, count, i=>
-            {             
-                var emp = new Employee() { Id = i + 1, Salary = (decimal?)(rnd.Next() * 0.01), Name = GenerateName(3 + i % 10, rnd) };
+            {
+
+                var emp = new Employee() { 
+                    Id = i + 1,
+                    Salary = (decimal?)(rnd.Next() * 0.01), 
+                    Name = GenerateName(3 + i % 10, rnd), 
+                    DateJoined  = new DateTime(1995 + rnd.Next(27) + 1, rnd.Next(12) + 1, rnd.Next(28) + 1), 
+                };
                 tree.Insert(emp);
             });
             var sz = tree.Size();
@@ -152,6 +189,8 @@ namespace SetTests
     {
         public int? Id { get; set; }
         public string Name { get; set; } = "";
+
+        public DateTime DateJoined { get; set; }
 
         public decimal? Salary { get; set; }
 

@@ -1,5 +1,7 @@
 ﻿namespace SetImpl
 {
+    using System.Linq;
+    using System.Linq.Expressions;
     internal class Program
     {
         static void Main()
@@ -13,7 +15,11 @@
             tree.Insert(50);
             tree.Insert(25);
 
-            Console.Write(tree.ToString());
+            var query = tree.Where(x => x > 20);
+            foreach (var item in query)
+            {
+                Console.WriteLine(item);
+            }
         }
     }
 }
