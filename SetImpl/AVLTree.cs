@@ -6,29 +6,24 @@ using System.Xml.Linq;
 
 namespace SetImpl
 {
-    public class AVLTree<T> : IAVLTree<T>, IQueryable<T> where T : IComparable<T>
+    public class AVLTree<T> : IAVLTree<T>, IEnumerable<T>, IQueryable<T> where T : IComparable<T>
     {
         public AVLTreeNode<T>? root;
         private readonly object lockObject = new();
-        private IQueryProvider provider;
-        // Implement the IQueryable interface
+        public IEnumerator<T> GetEnumerator() => InOrderTraversal(root).GetEnumerator();
+        IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
         public Type ElementType => typeof(T);
-
-        public Expression Expression => new AVLTreeExpression<T>(this);
-
-        public IQueryProvider Provider => provider;
+        public Expression Expression => Expression.Constant(this);
+        public IQueryProvider Provider => new AVLTreeQueryProvider<T>(this);
 
         public AVLTree(T[] items)
         {
-            provider = new AVLTreeQueryProvider<T>(this);
             foreach (var item in items)
                 Insert(item);
         }
 
         public AVLTree()
-        {
-            provider = new AVLTreeQueryProvider<T>(this);
-        }
+        { }
 
         public void Insert(T value)
         {
@@ -315,31 +310,23 @@ namespace SetImpl
             }
         }
 
+        
+        // Perform in-order traversal of the AVL tree
         private IEnumerable<T> InOrderTraversal(AVLTreeNode<T>? node)
         {
             if (node != null)
             {
-                foreach (var item in InOrderTraversal(node.Left))
-                {
-                    yield return item;
-                }
+                foreach (var left in InOrderTraversal(node.Left))
+                    yield return left;
                 yield return node.Value;
-                foreach (var item in InOrderTraversal(node.Right))
-                {
-                    yield return item;
-                }
+                foreach (var right in InOrderTraversal(node.Right))
+                    yield return right;
             }
         }
 
-        public IEnumerator<T> GetEnumerator()
+        public TResult Execute<TResult>(Expression expression)
         {
-            // Perform an in-order traversal to yield elements in ascending order
-            return InOrderTraversal(root).GetEnumerator();
-        }
-
-        IEnumerator IEnumerable.GetEnumerator()
-        {
-            return GetEnumerator();
+            throw new NotImplementedException();
         }
     }
 }

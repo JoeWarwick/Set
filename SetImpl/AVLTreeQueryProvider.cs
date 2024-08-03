@@ -1,146 +1,101 @@
 ﻿using System.Collections;
 using System.Linq.Expressions;
-using System.Xml.Linq;
-
 
 namespace SetImpl
 {
-    public class AVLTreeExpression<T> : Expression where T: IComparable<T>
+    public class AVLTreeQueryProvider<T>: IQueryProvider where T : IComparable<T>
     {
-        private readonly AVLTree<T> tree;
-
-        public AVLTreeExpression(AVLTree<T> tree)
-        {
-            this.tree = tree;
-        }
-
-
-        public override Type Type => typeof(IQueryable<T>);
-
-        // **This is the missing part:**
-        public override ExpressionType NodeType => ExpressionType.Extension;
-
-        // Override the ToString() method for debugging
-        public override string ToString()
-        {
-            return "AVLTreeExpression";
-        }
-    }
-
-    // Query provider for the AVL tree
-    public class AVLTreeQueryProvider<T> : IQueryProvider where T : IComparable<T>
-    {
-        private readonly AVLTree<T> tree;
+        private readonly AVLTree<T> _tree;
 
         public AVLTreeQueryProvider(AVLTree<T> tree)
         {
-            this.tree = tree;
+            _tree = tree;
         }
 
-        // Execute a query
-        public object Execute(Expression expression)
-        {
-            // Handle different types of queries (e.g., Where, Select, OrderBy)
-            // This implementation assumes a simple "Where" clause for demonstration purposes
-            if (expression is MethodCallExpression methodCallExpression)
-            {
-                if (methodCallExpression.Method.Name == "Where")
-                {
-                    // Extract the lambda expression from the Where clause
-                    var source = methodCallExpression.Arguments[1];
-                    LambdaExpression? lambda;
-                    if (source.NodeType == ExpressionType.Quote)
-                        lambda = ((UnaryExpression)source).Operand as LambdaExpression;
-                    else
-                        lambda = (LambdaExpression)methodCallExpression.Arguments[1];
-
-                    // Create a list to store the results
-                    List<T> results = new List<T>();
-
-                    // Traverse the AVL tree using an in-order traversal
-                    InOrderTraversal(this.tree.root, results, lambda);
-
-                    // Return the results as an IEnumerable
-                    return results.AsQueryable();
-                }
-            }
-
-            // Unsupported expression type
-            throw new NotImplementedException();
-        }
-
-        // Perform in-order traversal of the AVL tree
-        private void InOrderTraversal(AVLTreeNode<T>? node, List<T> results, LambdaExpression? lambda)
-        {
-            if (node == null)
-            {
-                return;
-            }
-
-            // Recursively traverse the left subtree
-            InOrderTraversal(node.Left, results, lambda);
-
-            // Check if the current node satisfies the filter condition
-            if (lambda != null && lambda.Compile().DynamicInvoke(node.Value) is bool condition && condition)
-            {
-                results.Add(node.Value);
-            }
-
-            // Recursively traverse the right subtree
-            InOrderTraversal(node.Right, results, lambda);
-        }
-
-        // Not implemented for this example
         public IQueryable CreateQuery(Expression expression)
         {
-            throw new NotImplementedException();
+            Type elementType = expression.Type.GetGenericArguments()[0];
+            return (IQueryable)Activator.CreateInstance(typeof(AVLTreeQueryable<>).MakeGenericType(elementType), new object[] { this, expression });
         }
 
-        // Not implemented for this example
         public IQueryable<TElement> CreateQuery<TElement>(Expression expression)
         {
-            // Create a new AVLTreeExpression for the new query
-            var newExpression = new AVLTreeExpression<T>(tree);
+            return new AVLTreeQueryable<TElement>((IQueryProvider)this, expression);
+        }
 
-            // Return an IQueryable<TElement> based on the new expression
-            return new AVLTreeQueryable<TElement>(this, expression, newExpression);
+        public object Execute(Expression expression)
+        {
+            return Execute<IEnumerable<T>>(expression);
         }
 
         public TResult Execute<TResult>(Expression expression)
         {
-            throw new NotImplementedException();
+            var isEnumerable = typeof(TResult).Name == "IEnumerable`1";
+            return (TResult)Execute(expression, isEnumerable);
         }
 
-        
+        private object? Execute(Expression expression, bool isEnumerable)
+        {
+            var visitor = new ExpressionTreeVisitor();
+            var lambda = Expression.Lambda<Func<T, bool>>(visitor.Visit(expression), visitor.Parameter);
+            var predicate = lambda.Compile();
+
+            var result = _tree.Where(predicate);
+
+            if (!isEnumerable)
+            {
+                return result.FirstOrDefault();
+            }
+            return result;
+        }
+
+        private class ExpressionTreeVisitor : ExpressionVisitor
+        {
+            public ParameterExpression Parameter { get; } = Expression.Parameter(typeof(T), "x");
+
+            protected override Expression VisitMethodCall(MethodCallExpression node)
+            {
+                if (node.Method.DeclaringType == typeof(Queryable) && node.Method.Name == "Where")
+                {
+                    var lambda = (LambdaExpression)StripQuotes(node.Arguments[1]);
+                    return Expression.Invoke(lambda, Parameter);
+                }
+                return base.VisitMethodCall(node);
+            }
+
+            private static Expression StripQuotes(Expression e)
+            {
+                while (e.NodeType == ExpressionType.Quote)
+                {
+                    e = ((UnaryExpression)e).Operand;
+                }
+                return e;
+            }
+        }
     }
 
-    public class AVLTreeQueryable<TElement> : IQueryable<TElement>
+    public class AVLTreeQueryable<T> : IQueryable<T>
     {
-        private IQueryProvider provider;
-        private Expression expression;
-        private Expression treeExpression;
+        private IQueryProvider _provider;
+        private Expression _expression;
 
-        public AVLTreeQueryable(IQueryProvider provider, Expression expression, Expression treeExpression)
+        public AVLTreeQueryable(IQueryProvider provider, Expression expression)
         {
-            this.provider = provider;
-            this.expression = expression;
-            this.treeExpression = treeExpression;
+            this._provider = provider;
+            this._expression = expression;
         }
 
-        public Type ElementType => typeof(TElement);
+        public Type ElementType => typeof(T);
 
-        public Expression Expression => expression;
+        public Expression Expression => _expression;
 
-        public Expression TreeExpression => treeExpression;
+        public IQueryProvider Provider => _provider;
 
-        public IQueryProvider Provider => provider;
-
-        public IEnumerator<TElement> GetEnumerator()
+        public IEnumerator<T> GetEnumerator()
         {
-            var res = (IQueryable<TElement>?)provider.Execute(expression);
-            if(res != null) return res.GetEnumerator();
-            return new List<TElement>().GetEnumerator();
+            return ((_provider.Execute<IEnumerable<T>>(_expression)) ?? Enumerable.Empty<T>()).GetEnumerator();
         }
+
         IEnumerator IEnumerable.GetEnumerator()
         {
             return GetEnumerator();
