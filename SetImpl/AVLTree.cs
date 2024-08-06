@@ -6,21 +6,27 @@ using System.Xml.Linq;
 
 namespace SetImpl
 {
+    public enum Traversal
+    {
+        InOrder,
+        ReverseOrder,
+        PreOrder,
+        PostOrder
+    }
     public class AVLTree<T> : IAVLTree<T>, IEnumerable<T> where T : IComparable<T>
     {
         public AVLTreeNode<T>? root;
         private readonly object lockObject = new();
-        public IEnumerator<T> GetEnumerator() => InOrderTraversal().GetEnumerator();
-        IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
+        public Traversal traversal { get; private set; }
 
-        public AVLTree(T[] items)
+        public AVLTree(T[] items, Traversal traversal = Traversal.InOrder)
         {
+            this.traversal = traversal;
             foreach (var item in items)
                 Insert(item);
         }
 
-        public AVLTree()
-        { }
+        public AVLTree(Traversal traversal = Traversal.InOrder) => this.traversal = traversal;
 
         public void Insert(T value)
         {
@@ -77,7 +83,7 @@ namespace SetImpl
         public T? Find(T value)
         {
             var result = AVLTree<T>.Find(root, value);
-            return result == null ? default : result.Value;  
+            return result == null ? default : result.Value;
         }
 
         private static AVLTreeNode<T>? Find(AVLTreeNode<T>? node, T Value)
@@ -175,7 +181,7 @@ namespace SetImpl
 
         private static int Size(AVLTreeNode<T>? node)
         {
-            if(node == null) return 0;
+            if (node == null) return 0;
             return 1 + Size(node.Left) + Size(node.Right);
         }
 
@@ -205,11 +211,11 @@ namespace SetImpl
             AVLTreeNode<T>? T2 = x?.Right;
 
             // Perform rotation
-            if(x!=null) x.Right = y;
-            if(y!=null) y.Left = T2;
+            if (x != null) x.Right = y;
+            if (y != null) y.Left = T2;
 
-            if(y!=null) y.Height = Math.Max(Height(y.Left), Height(y.Right)) + 1;
-            if(x!=null) x.Height = Math.Max(Height(x.Left), Height(x.Right)) + 1;
+            if (y != null) y.Height = Math.Max(Height(y.Left), Height(y.Right)) + 1;
+            if (x != null) x.Height = Math.Max(Height(x.Left), Height(x.Right)) + 1;
 
             // Return new root
             return x;
@@ -221,11 +227,11 @@ namespace SetImpl
             AVLTreeNode<T>? T2 = y?.Left;
 
             // Perform rotation
-            if(y!=null) y.Left = x;
-            if(x!=null) x.Right = T2;
+            if (y != null) y.Left = x;
+            if (x != null) x.Right = T2;
 
-            if(x!=null) x.Height = Math.Max(Height(x.Left), Height(x.Right)) + 1;
-            if(y!=null) y.Height = Math.Max(Height(y.Left), Height(y.Right)) + 1;
+            if (x != null) x.Height = Math.Max(Height(x.Left), Height(x.Right)) + 1;
+            if (y != null) y.Height = Math.Max(Height(y.Left), Height(y.Right)) + 1;
 
             // Return new root
             return y;
@@ -306,48 +312,24 @@ namespace SetImpl
                 return index + leftCount;
             }
         }
+        public IEnumerator<T> GetEnumerator() => Traverse().GetEnumerator();
+        
+        IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
 
+        // Perform traversal of the AVL tree
+        public IEnumerable<T> Traverse() => Traverse(root);
 
-        // Perform in-order traversal of the AVL tree
-        public IEnumerable<T> InOrderTraversal() => InOrderTraversal(root);
-
-        private IEnumerable<T> InOrderTraversal(AVLTreeNode<T>? node)
+        private IEnumerable<T> Traverse(AVLTreeNode<T>? node)
         {
             if (node != null)
             {
-                foreach (var n in InOrderTraversal(node.Left))
+                if (traversal == Traversal.PreOrder) yield return node.Value;
+                foreach (var n in Traverse(traversal == Traversal.ReverseOrder ? node.Right : node.Left))
                     yield return n;
-                yield return node.Value;
-                foreach (var n in InOrderTraversal(node.Right))
+                if(traversal == Traversal.InOrder || traversal == Traversal.ReverseOrder) yield return node.Value;
+                foreach (var n in Traverse(traversal == Traversal.ReverseOrder ? node.Left : node.Right))
                     yield return n;
-            }
-        }
-
-        public IEnumerable<T> ReverseOrderTraversal() => ReverseOrderTraversal(root);
-
-        private IEnumerable<T> ReverseOrderTraversal(AVLTreeNode<T>? node)
-        {
-            if (node != null)
-            {
-                foreach (var n in ReverseOrderTraversal(node.Right))
-                    yield return n;
-                yield return node.Value;
-                foreach (var n in ReverseOrderTraversal(node.Left))
-                    yield return n;
-            }
-        }
-
-        public IEnumerable<T> PostOrderTraversal() => PostOrderTraversal(root);
-
-        private IEnumerable<T> PostOrderTraversal(AVLTreeNode<T>? node)
-        {
-            if (node != null)
-            {
-                foreach (var n in PostOrderTraversal(node.Right))
-                    yield return n;
-                foreach (var n in PostOrderTraversal(node.Left))
-                    yield return n;
-                yield return node.Value;
+                if(traversal == Traversal.PostOrder) yield return node.Value;
             }
         }
     }

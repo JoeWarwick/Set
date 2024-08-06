@@ -9,6 +9,6 @@ namespace SetImpl
         int IndexOf(T value);
         void Insert(T value);
         string ToString();
-        IEnumerable<T> InOrderTraversal();
+        IEnumerable<T> Traverse();
     }
 }

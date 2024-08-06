@@ -137,7 +137,7 @@ namespace SetTests
             tree.Insert(3);
             tree.Insert(7);
             
-            var query = tree.Where(x => x > 5).ToList();
+            var query = tree.Where(x => x > 5);
 
             Assert.AreEqual(3, query.Count());
             Assert.AreEqual(7, query.First());
