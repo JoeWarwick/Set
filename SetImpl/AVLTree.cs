@@ -6,15 +6,12 @@ using System.Xml.Linq;
 
 namespace SetImpl
 {
-    public class AVLTree<T> : IAVLTree<T>, IEnumerable<T>, IQueryable<T> where T : IComparable<T>
+    public class AVLTree<T> : IAVLTree<T>, IEnumerable<T> where T : IComparable<T>
     {
         public AVLTreeNode<T>? root;
         private readonly object lockObject = new();
-        public IEnumerator<T> GetEnumerator() => InOrderTraversal(root).GetEnumerator();
+        public IEnumerator<T> GetEnumerator() => InOrderTraversal().GetEnumerator();
         IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
-        public Type ElementType => typeof(T);
-        public Expression Expression => Expression.Constant(this);
-        public IQueryProvider Provider => new AVLTreeQueryProvider<T>(this);
 
         public AVLTree(T[] items)
         {
@@ -95,53 +92,45 @@ namespace SetImpl
             else return node;
         }
 
-        public void Delete(T value)
+        public bool Delete(T value)
         {
-            root = AVLTree<T>.Delete(root, value);
+            bool removed;
+            root = AVLTree<T>.Delete(root, value, out removed);
+            return removed;
         }
 
-        private static AVLTreeNode<T>? Delete(AVLTreeNode<T>? node, T value)
+        private static AVLTreeNode<T>? Delete(AVLTreeNode<T>? node, T value, out bool removed)
         {
+            removed = false;
             if (node == null)
                 return node;
 
             int compareResult = value.CompareTo(node.Value);
             if (compareResult < 0)
-                node.Left = Delete(node.Left, value);
+                node.Left = Delete(node.Left, value, out removed);
             else if (compareResult > 0)
-                node.Right = Delete(node.Right, value);
+                node.Right = Delete(node.Right, value, out removed);
             else
             {
-                // Node with only one child or no child
-                if (node.Left == null || node.Right == null)
-                {
-                    AVLTreeNode<T>? temp;
-                    if (node.Left == null)
-                        temp = node.Right;
-                    else
-                        temp = node.Left;
+                removed = true;
+                // Node to delete found
 
-                    if (temp == null)
-                    {
-                        node = null;
-                    }
-                    else
-                        node = temp; // Copy the contents of the non-empty child
-                }
-                else
-                {
-                    // Node with two children
-                    AVLTreeNode<T> temp = MinValueNode(node.Right);
+                // Case 1: Leaf node
+                if (node.Left == null && node.Right == null)
+                    return null;
 
-                    node.Value = temp.Value;
+                // Case 2: Node with only one child
+                if (node.Left == null)
+                    return node.Right;
+                if (node.Right == null)
+                    return node.Left;
 
-                    node.Right = Delete(node.Right, temp.Value);
-                }
+                // Case 3: Node with two children
+                var successor = FindMin(node.Right);
+
+                node.Value = successor.Value;
+                node.Right = Delete(node.Right, successor.Value, out _);
             }
-
-            if (node == null)
-                return node;
-
             node.Height = Math.Max(Height(node.Left), Height(node.Right)) + 1;
 
             int balance = GetBalance(node);
@@ -170,6 +159,14 @@ namespace SetImpl
 
             return node;
         }
+
+        private static AVLTreeNode<T> FindMin(AVLTreeNode<T> node)
+        {
+            while (node.Left != null)
+                node = node.Left;
+            return node;
+        }
+
 
         public int Size()
         {
@@ -310,23 +307,48 @@ namespace SetImpl
             }
         }
 
-        
+
         // Perform in-order traversal of the AVL tree
+        public IEnumerable<T> InOrderTraversal() => InOrderTraversal(root);
+
         private IEnumerable<T> InOrderTraversal(AVLTreeNode<T>? node)
         {
             if (node != null)
             {
-                foreach (var left in InOrderTraversal(node.Left))
-                    yield return left;
+                foreach (var n in InOrderTraversal(node.Left))
+                    yield return n;
                 yield return node.Value;
-                foreach (var right in InOrderTraversal(node.Right))
-                    yield return right;
+                foreach (var n in InOrderTraversal(node.Right))
+                    yield return n;
             }
         }
 
-        public TResult Execute<TResult>(Expression expression)
+        public IEnumerable<T> ReverseOrderTraversal() => ReverseOrderTraversal(root);
+
+        private IEnumerable<T> ReverseOrderTraversal(AVLTreeNode<T>? node)
         {
-            throw new NotImplementedException();
+            if (node != null)
+            {
+                foreach (var n in ReverseOrderTraversal(node.Right))
+                    yield return n;
+                yield return node.Value;
+                foreach (var n in ReverseOrderTraversal(node.Left))
+                    yield return n;
+            }
+        }
+
+        public IEnumerable<T> PostOrderTraversal() => PostOrderTraversal(root);
+
+        private IEnumerable<T> PostOrderTraversal(AVLTreeNode<T>? node)
+        {
+            if (node != null)
+            {
+                foreach (var n in PostOrderTraversal(node.Right))
+                    yield return n;
+                foreach (var n in PostOrderTraversal(node.Left))
+                    yield return n;
+                yield return node.Value;
+            }
         }
     }
 }

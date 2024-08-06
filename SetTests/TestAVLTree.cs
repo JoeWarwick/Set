@@ -1,3 +1,5 @@
+using System.Linq;
+
 namespace SetTests
 {
     using System;
@@ -134,14 +136,11 @@ namespace SetTests
             tree.Insert(5);
             tree.Insert(3);
             tree.Insert(7);
-
             
-            var query = tree.Where(x => x > 5);
+            var query = tree.Where(x => x > 5).ToList();
 
-            foreach (var item in query)
-            {
-                Console.WriteLine(item);
-            }
+            Assert.AreEqual(3, query.Count());
+            Assert.AreEqual(7, query.First());
         }
 
         [TestMethod]
@@ -149,13 +148,12 @@ namespace SetTests
         {
             var tree = new AVLTree<Employee>();
             var rnd = new Random(DateTime.UtcNow.Millisecond);
-            var count = 10_000;
+            var count = 100_000;
             Parallel.For(0, count, i=>
             {
-
                 var emp = new Employee() { 
                     Id = i + 1,
-                    Salary = (decimal?)(rnd.Next() * 0.01), 
+                    Salary = (decimal)(rnd.Next() * 0.01), 
                     Name = GenerateName(3 + i % 10, rnd), 
                     DateJoined  = new DateTime(1995 + rnd.Next(27) + 1, rnd.Next(12) + 1, rnd.Next(28) + 1), 
                 };
@@ -163,6 +161,33 @@ namespace SetTests
             });
             var sz = tree.Size();
             Assert.AreEqual(count, sz);
+        }
+
+        [TestMethod]
+        public void TestLargeDelete()
+        {
+            var tree = new AVLTree<Employee>();
+            var rnd = new Random(DateTime.UtcNow.Millisecond);
+            var sample = 100_000;
+            Parallel.For(0, sample, i =>
+            {
+                var emp = new Employee()
+                {
+                    Id = i + 1,
+                    Salary = (decimal)(rnd.Next() * 0.01),
+                    Name = GenerateName(3 + i % 10, rnd),
+                    DateJoined = new DateTime(1995 + rnd.Next(27) + 1, rnd.Next(12) + 1, rnd.Next(28) + 1),
+                };
+                tree.Insert(emp);
+            });
+            var origSz = tree.Size();
+            var res = tree.ToString();
+            var d = tree.Where(x => x.DateJoined < DateTime.Now.AddYears(-15) && x.Salary > 4000000);
+            int count = d.Count();
+            int dcount = tree.DeleteWhere(x => x.DateJoined < DateTime.Now.AddYears(-15) && x.Salary > 4000000);
+            var size = tree.Size(); 
+            Assert.AreEqual(size, origSz - dcount);
+            Assert.AreEqual(size, origSz - count);
         }
 
         public static string GenerateName(int len, Random r)
@@ -192,11 +217,11 @@ namespace SetTests
 
         public DateTime DateJoined { get; set; }
 
-        public decimal? Salary { get; set; }
+        public decimal Salary { get; set; }
 
         public override string ToString()
         {
-            return $"{this.Salary} || {this.Name}";
+            return $"{this.Id} || {this.Name}";
         }
 
         public int CompareTo(Employee? other)
