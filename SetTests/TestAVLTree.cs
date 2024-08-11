@@ -1,5 +1,3 @@
-using System.Linq;
-
 namespace SetTests
 {
     using System;
@@ -116,7 +114,7 @@ namespace SetTests
         }
 
         [TestMethod]
-        public void TestGetIndexOf()
+        public void TestIndexOf()
         {
             int[] test = { 13, 15, 10, 16, 5, 11, 4, 6 };
             AVLTree<int> tree = new(test);
@@ -127,7 +125,7 @@ namespace SetTests
         }
 
         [TestMethod]
-        public void TestQuery()
+        public void TestWhereQuery()
         {
             var tree = new AVLTree<int>();
 
@@ -144,12 +142,12 @@ namespace SetTests
         }
 
         [TestMethod]
-        public void TestLargeSet()
+        public async Task TestLargeSet()
         {
             var tree = new AVLTree<Employee>();
             var rnd = new Random(DateTime.UtcNow.Millisecond);
-            var count = 100_000;
-            Parallel.For(0, count, i=>
+            var count = 1_000_000;
+            await Parallel.ForAsync(0, count, async (i, _) =>
             {
                 var emp = new Employee() { 
                     Id = i + 1,
@@ -164,12 +162,12 @@ namespace SetTests
         }
 
         [TestMethod]
-        public void TestLargeDelete()
+        public async Task TestLargeDelete()
         {
             var tree = new AVLTree<Employee>();
             var rnd = new Random(DateTime.UtcNow.Millisecond);
-            var sample = 100_000;
-            Parallel.For(0, sample, i =>
+            var sample = 1_000_000;
+            await Parallel.ForAsync(0, sample, async (i, _) =>
             {
                 var emp = new Employee()
                 {
@@ -181,13 +179,10 @@ namespace SetTests
                 tree.Insert(emp);
             });
             var origSz = tree.Size();
-            var res = tree.ToString();
-            var d = tree.Where(x => x.DateJoined < DateTime.Now.AddYears(-15) && x.Salary > 4000000);
-            int count = d.Count();
-            int dcount = tree.DeleteWhere(x => x.DateJoined < DateTime.Now.AddYears(-15) && x.Salary > 4000000);
-            var size = tree.Size(); 
-            Assert.AreEqual(size, origSz - dcount);
-            Assert.AreEqual(size, origSz - count);
+            Assert.AreEqual(sample, origSz);
+            int dcount = await tree.DeleteWhere(x => x.DateJoined < DateTime.Now.AddYears(-15) && x.Salary > 4000000);
+            var size = tree.Size();
+            Assert.AreEqual(size, origSz - dcount);            
         }
 
         public static string GenerateName(int len, Random r)

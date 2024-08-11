@@ -13,6 +13,7 @@ namespace SetImpl
         PreOrder,
         PostOrder
     }
+
     public class AVLTree<T> : IAVLTree<T>, IEnumerable<T> where T : IComparable<T>
     {
         public AVLTreeNode<T>? root;
@@ -53,8 +54,8 @@ namespace SetImpl
 
             int balance = GetBalance(node);
 
-            var lv = node.Left != null ? node.Left.Value : default(T);
-            var rv = node.Right != null ? node.Right.Value : default(T);
+            var lv = node.Left != null ? node.Left.Value : default;
+            var rv = node.Right != null ? node.Right.Value : default;
             // Left heavy situation
             if (balance > 1 && value.CompareTo(lv) < 0)
                 return RotateRight(node);
@@ -117,23 +118,18 @@ namespace SetImpl
             else if (compareResult > 0)
                 node.Right = Delete(node.Right, value, out removed);
             else
-            {
+            {   // Node to delete found
                 removed = true;
-                // Node to delete found
-
                 // Case 1: Leaf node
                 if (node.Left == null && node.Right == null)
                     return null;
-
                 // Case 2: Node with only one child
                 if (node.Left == null)
                     return node.Right;
                 if (node.Right == null)
                     return node.Left;
-
                 // Case 3: Node with two children
                 var successor = FindMin(node.Right);
-
                 node.Value = successor.Value;
                 node.Right = Delete(node.Right, successor.Value, out _);
             }
@@ -173,11 +169,7 @@ namespace SetImpl
             return node;
         }
 
-
-        public int Size()
-        {
-            return Size(root);
-        }
+        public int Size() => Size(root);
 
         private static int Size(AVLTreeNode<T>? node)
         {
@@ -188,22 +180,15 @@ namespace SetImpl
         private static AVLTreeNode<T> MinValueNode(AVLTreeNode<T> node)
         {
             AVLTreeNode<T> current = node;
-
             while (current.Left != null)
                 current = current.Left;
 
             return current;
         }
 
-        private static int Height(AVLTreeNode<T>? node)
-        {
-            return node == null ? 0 : node.Height;
-        }
+        private static int Height(AVLTreeNode<T>? node) => node == null ? 0 : node.Height;
 
-        private static int GetBalance(AVLTreeNode<T>? node)
-        {
-            return node == null ? 0 : Height(node.Left) - Height(node.Right);
-        }
+        private static int GetBalance(AVLTreeNode<T>? node) => node == null ? 0 : Height(node.Left) - Height(node.Right);
 
         private static AVLTreeNode<T>? RotateRight(AVLTreeNode<T>? y)
         {
@@ -226,14 +211,12 @@ namespace SetImpl
             AVLTreeNode<T>? y = x?.Right;
             AVLTreeNode<T>? T2 = y?.Left;
 
-            // Perform rotation
             if (y != null) y.Left = x;
             if (x != null) x.Right = T2;
 
             if (x != null) x.Height = Math.Max(Height(x.Left), Height(x.Right)) + 1;
             if (y != null) y.Height = Math.Max(Height(y.Left), Height(y.Right)) + 1;
 
-            // Return new root
             return y;
         }
 

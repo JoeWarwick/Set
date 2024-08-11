@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using System.Collections.Concurrent;
 
 namespace SetImpl
 {
@@ -29,20 +25,23 @@ namespace SetImpl
             }
         }
 
-        public static int DeleteWhere<T>(this AVLTree<T> tree, Func<T, bool> predicate) where T : IComparable<T>
+        public static async Task<int> DeleteWhere<T>(this AVLTree<T> tree, Func<T, bool> predicate) where T : IComparable<T>
         {
-            var toDelete = new List<T>();
-            foreach (var item in tree)
+            var toDelete = new ConcurrentBag<T>();
+
+            await Parallel.ForEachAsync(tree, async (item, _) =>
             {
                 if (predicate(item))
                     toDelete.Add(item);
-            }
+            });
+
             int count = 0;
             foreach (var item in toDelete)
             {
                 if (tree.Delete(item))
-                    count++;
+                    Interlocked.Increment(ref count);
             }
+
             return count;
         }
 

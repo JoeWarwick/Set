@@ -1,7 +1,5 @@
 ﻿namespace SetImpl
 {
-    using System.Linq;
-    using System.Linq.Expressions;
     internal class Program
     {
         static void Main()
