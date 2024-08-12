@@ -50,10 +50,10 @@ namespace SetImpl
         public static AVLTree<T> ToAVLTree<T>(this IEnumerable<T> source) where T : IComparable<T>
         {
             var newTree = new AVLTree<T>();
-            foreach (var item in source)
+            Parallel.ForEach(source, (item, _) =>
             {
                 newTree.Insert(item);
-            }
+            });
             return newTree;
         }
     }
