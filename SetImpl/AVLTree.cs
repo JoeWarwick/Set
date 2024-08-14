@@ -15,16 +15,16 @@ namespace SetImpl
     {
         public AVLTreeNode<T>? root;
         private readonly object lockObject = new();
-        public Traversal traversal { get; private set; }
+        public Traversal Traversal { get; private set; }
 
         public AVLTree(T[] items, Traversal traversal = Traversal.InOrder)
         {
-            this.traversal = traversal;
+            this.Traversal = traversal;
             foreach (var item in items)
                 Insert(item);
         }
 
-        public AVLTree(Traversal traversal = Traversal.InOrder) => this.traversal = traversal;
+        public AVLTree(Traversal traversal = Traversal.InOrder) => this.Traversal = traversal;
 
         public void Insert(T value)
         {
@@ -275,21 +275,18 @@ namespace SetImpl
         {
             if (node == null) return -1; // Value not found
 
-            // Count left subtree values
-            int leftCount = Size(node.Left);
-
             if (value.CompareTo(node.Value) < 0)
             {
                 return IndexOf(node.Left, value, index);
             }
             else if (value.CompareTo(node.Value) > 0)
             {
-                return IndexOf(node.Right, value, index + leftCount + 1);
+                return IndexOf(node.Right, value, index + Size(node.Left) + 1);
             }
             else
             {
                 // Value found, return the index
-                return index + leftCount;
+                return index + Size(node.Left);
             }
         }
         public IEnumerator<T> GetEnumerator() => Traverse().GetEnumerator();
@@ -303,13 +300,13 @@ namespace SetImpl
         {
             if (node != null)
             {
-                if (traversal == Traversal.PreOrder) yield return node.Value;
-                foreach (var n in Traverse(traversal == Traversal.ReverseOrder ? node.Right : node.Left))
+                if (Traversal == Traversal.PreOrder) yield return node.Value;
+                foreach (var n in Traverse(Traversal == Traversal.ReverseOrder ? node.Right : node.Left))
                     yield return n;
-                if(traversal == Traversal.InOrder || traversal == Traversal.ReverseOrder) yield return node.Value;
-                foreach (var n in Traverse(traversal == Traversal.ReverseOrder ? node.Left : node.Right))
+                if(Traversal == Traversal.InOrder || Traversal == Traversal.ReverseOrder) yield return node.Value;
+                foreach (var n in Traverse(Traversal == Traversal.ReverseOrder ? node.Left : node.Right))
                     yield return n;
-                if(traversal == Traversal.PostOrder) yield return node.Value;
+                if(Traversal == Traversal.PostOrder) yield return node.Value;
             }
         }
     }
