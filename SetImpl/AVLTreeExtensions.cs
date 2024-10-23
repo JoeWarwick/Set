@@ -25,11 +25,11 @@ namespace SetImpl
             }
         }
 
-        public static async Task<int> DeleteWhere<T>(this AVLTree<T> tree, Func<T, bool> predicate) where T : IComparable<T>
+        public static int DeleteWhere<T>(this AVLTree<T> tree, Func<T, bool> predicate) where T : IComparable<T>
         {
             var toDelete = new ConcurrentBag<T>();
 
-            await Parallel.ForEachAsync(tree, async (item, _) =>
+            Parallel.ForEach(tree, (item, _) =>
             {
                 if (predicate(item))
                     toDelete.Add(item);

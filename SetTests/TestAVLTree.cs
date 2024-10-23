@@ -6,7 +6,6 @@ namespace SetTests
     [TestClass]
     public class TestAVLTree
     {
-        private readonly int parallelCatch = 600;
         [TestMethod]
         public void TestEmptyTree() 
         {
@@ -182,7 +181,7 @@ namespace SetTests
             });
             var origSz = await tree.Size();
             Assert.AreEqual(sample, origSz);
-            int dcount = await tree.DeleteWhere(x => x.DateJoined < DateTime.Now.AddYears(-15) && x.Salary > 4000000);
+            int dcount = tree.DeleteWhere(x => x.DateJoined < DateTime.Now.AddYears(-15) && x.Salary > 4000000);
             var size = await tree.Size();
             
             Assert.AreEqual(size, origSz - dcount);            
