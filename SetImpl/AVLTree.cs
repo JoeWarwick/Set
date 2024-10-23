@@ -166,7 +166,7 @@ namespace SetImpl
             return node;
         }
 
-        public int Size() => Size(root);
+        public async Task<int> Size() => await Task.Run(() => Size(root));
 
         private static int Size(AVLTreeNode<T>? node)
         {

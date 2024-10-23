@@ -6,6 +6,7 @@ namespace SetTests
     [TestClass]
     public class TestAVLTree
     {
+        private readonly int parallelCatch = 600;
         [TestMethod]
         public void TestEmptyTree() 
         {
@@ -147,7 +148,7 @@ namespace SetTests
             var tree = new AVLTree<Employee>();
             var rnd = new Random(DateTime.UtcNow.Millisecond);
             var count = 1_000_000;
-            await Parallel.ForAsync(0, count, async (i, _) =>
+            Parallel.For(0, count, (i) =>
             {
                 var emp = new Employee() { 
                     Id = i + 1,
@@ -157,7 +158,8 @@ namespace SetTests
                 };
                 tree.Insert(emp);
             });
-            var sz = tree.Size();
+            var sz = await tree.Size();
+            
             Assert.AreEqual(count, sz);
         }
 
@@ -167,7 +169,7 @@ namespace SetTests
             var tree = new AVLTree<Employee>();
             var rnd = new Random(DateTime.UtcNow.Millisecond);
             var sample = 1_000_000;
-            await Parallel.ForAsync(0, sample, async (i, _) =>
+            Parallel.For(0, sample, (i) =>
             {
                 var emp = new Employee()
                 {
@@ -178,10 +180,11 @@ namespace SetTests
                 };
                 tree.Insert(emp);
             });
-            var origSz = tree.Size();
+            var origSz = await tree.Size();
             Assert.AreEqual(sample, origSz);
             int dcount = await tree.DeleteWhere(x => x.DateJoined < DateTime.Now.AddYears(-15) && x.Salary > 4000000);
-            var size = tree.Size();
+            var size = await tree.Size();
+            
             Assert.AreEqual(size, origSz - dcount);            
         }
 

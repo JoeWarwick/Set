@@ -1,16 +1,10 @@
 namespace SetImpl
 {
-    public class AVLTreeNode<T> where T : IComparable<T>
+    public class AVLTreeNode<T>(T value) where T : IComparable<T>
     {
-        public T Value { get; set; }
+        public T Value { get; set; } = value;
         public AVLTreeNode<T>? Left { get; set; }
         public AVLTreeNode<T>? Right { get; set; }
-        public int Height { get; set; }
-
-        public AVLTreeNode(T value)
-        {
-            Value = value;
-            Height = 1;
-        }
+        public int Height { get; set; } = 1;
     }
 }
