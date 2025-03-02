@@ -298,10 +298,7 @@ namespace SetImpl
 
         private IEnumerable<T> Traverse(AVLTreeNode<T>? node)
         {
-            if (node == null)
-            {
-                yield break;
-            }
+            if (node == null) yield break;
             if (Traversal == Traversal.PreOrder) yield return node.Value;
             foreach (var n in Traverse(Traversal == Traversal.ReverseOrder ? node.Right : node.Left))
                 yield return n;
