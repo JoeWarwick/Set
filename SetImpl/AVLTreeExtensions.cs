@@ -45,8 +45,6 @@ namespace SetImpl
             return count;
         }
 
-        // You can add more custom methods here if needed
-
         public static AVLTree<T> ToAVLTree<T>(this IEnumerable<T> source) where T : IComparable<T>
         {
             var newTree = new AVLTree<T>();
